@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const API_URL = "https://api.github.com/repos/%s/releases"
+const API_ROOT = "https://api.github.com"
 
 type Asset struct {
 	Name          string `json:"name"`
@@ -19,22 +19,41 @@ type Release struct {
 	Assets []Asset `json:"assets"`
 }
 
-// GetReleases fetches the releases for a given repository
-func GetReleases[R any](repo string) ([]R, error) {
-	// Perform the GET request
-	resp, err := http.Get(fmt.Sprintf(API_URL, repo))
+// Request fetches a JSON response from the GitHub API and decodes it into the provided type
+func Request[R any](path string) (*R, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/%s", API_ROOT, path))
 	if err != nil {
 		return nil, fmt.Errorf("error fetching URL: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Decode the JSON response
-	var releases []R
-	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+	var res R
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, fmt.Errorf("error decoding JSON: %v", err)
 	}
 
-	return releases, nil
+	return &res, nil
+}
+
+// RequestMany fetches a JSON response from the GitHub API and decodes it into a slice of the provided type
+func RequestMany[R any](path string) ([]R, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/%s", API_ROOT, path))
+	if err != nil {
+		return nil, fmt.Errorf("error fetching URL: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var res []R
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, fmt.Errorf("error decoding JSON: %v", err)
+	}
+
+	return res, nil
+}
+
+// GetReleases fetches the releases for a given repository
+func GetReleases[R any](repo string) ([]R, error) {
+	return RequestMany[R](fmt.Sprintf("repos/%s/releases", repo))
 }
 
 // AggregateDownloadCount aggregates the download count for each asset
