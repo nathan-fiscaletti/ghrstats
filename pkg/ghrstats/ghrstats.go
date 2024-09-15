@@ -6,11 +6,13 @@ import (
 	"path/filepath"
 )
 
+// Asset represents a GitHub release asset
 type Asset struct {
 	Name          string `json:"name"`
 	DownloadCount int    `json:"download_count"`
 }
 
+// Release represents a GitHub release
 type Release struct {
 	Assets []Asset `json:"assets"`
 }

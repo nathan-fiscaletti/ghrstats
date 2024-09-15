@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// API_ROOT is the root URL for the GitHub API
 const API_ROOT = "https://api.github.com"
 
 // Request fetches a JSON response from the GitHub API and decodes it into the provided type
