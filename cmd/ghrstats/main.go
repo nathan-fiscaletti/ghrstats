@@ -38,7 +38,7 @@ func getArgs() (*arguments, error) {
 
 	args := flag.Args()
 	if len(args) < 1 {
-		return nil, fmt.Errorf("usage: %v [-patterns .ext1,.ext2,...] <repo>", os.Args[0])
+		return nil, fmt.Errorf("usage: %v [-patterns *.ext1,*.ext2,...] <repo>", os.Args[0])
 	}
 
 	res.repo = args[0]
