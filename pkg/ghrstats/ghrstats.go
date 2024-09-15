@@ -22,12 +22,15 @@ func GetReleases[R any](repo string) ([]R, error) {
 	return RequestMany[R](fmt.Sprintf("repos/%s/releases", repo))
 }
 
-// AggregateDownloadCount aggregates the download count for each asset
-func AggregateDownloadCount(releases []Release) map[Asset]int {
+// AggregateDownloadCount aggregates the download count for each asset, applying
+// a predicate to filter the assets. If the predicate is nil, all assets will be included
+func AggregateDownloadCount(releases []Release, predicate func(Asset) bool) map[Asset]int {
 	totalCount := make(map[Asset]int)
 	for _, release := range releases {
 		for _, asset := range release.Assets {
-			totalCount[asset] += asset.DownloadCount
+			if predicate == nil || predicate(asset) {
+				totalCount[asset] += asset.DownloadCount
+			}
 		}
 	}
 	return totalCount
@@ -63,12 +66,10 @@ func GetDownloadsForRepository(repo string, predicate func(Asset) bool) (int, er
 		return 0, err
 	}
 
-	assetCounts := AggregateDownloadCount(releases)
+	assetCounts := AggregateDownloadCount(releases, predicate)
 	var total int
-	for asset, count := range assetCounts {
-		if predicate == nil || predicate(asset) {
-			total += count
-		}
+	for _, count := range assetCounts {
+		total += count
 	}
 	return total, nil
 }

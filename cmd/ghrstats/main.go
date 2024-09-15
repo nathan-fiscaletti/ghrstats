@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"log"
@@ -15,10 +16,32 @@ func main() {
 		log.Fatalf("%v", err.Error())
 	}
 
-	downloadCount, err := ghrstats.GetDownloadsForRepository(args.Repo, args.Filter)
-	if err != nil {
-		log.Fatalf("Error fetching downloads: %v", err)
+	data := map[string]any{}
+
+	switch args.Action {
+	case cli.ActionAggregateTotal:
+		downloadCount, err := ghrstats.GetDownloadsForRepository(args.Repo, args.Filter)
+		if err != nil {
+			log.Fatalf("Error fetching downloads: %v", err)
+		}
+
+		data["aggregate_downloads"] = downloadCount
+	case cli.ActionAggregateItemized:
+		releases, err := ghrstats.GetReleases[ghrstats.Release](args.Repo)
+		if err != nil {
+			log.Fatalf("Error fetching releases: %v", err)
+		}
+
+		aggregate := ghrstats.AggregateDownloadCount(releases, args.Filter)
+		for asset, count := range aggregate {
+			data[asset.Name] = count
+		}
 	}
 
-	fmt.Printf("%d\n", downloadCount)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalf("Error marshalling JSON: %v", err)
+	}
+
+	fmt.Println(string(jsonData))
 }
