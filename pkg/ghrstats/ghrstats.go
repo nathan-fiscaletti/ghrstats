@@ -37,18 +37,21 @@ func AggregateDownloadCount(releases []Release) map[Asset]int {
 // The predicate will return true if the asset name matches any of the provided patterns
 var ByFileNamePatterns = func(patterns ...string) func(Asset) bool {
 	return func(asset Asset) bool {
+		var matched bool
+
 		for _, pattern := range patterns {
-			matched, err := filepath.Match(pattern, asset.Name)
+			var err error
+			matched, err = filepath.Match(pattern, asset.Name)
 			if err != nil {
 				log.Fatalf("Error matching pattern: %v", err)
 			}
 
 			if matched {
-				return true
+				break
 			}
 		}
 
-		return false
+		return matched
 	}
 }
 
