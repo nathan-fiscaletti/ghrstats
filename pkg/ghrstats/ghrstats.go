@@ -59,6 +59,10 @@ var ByFileNamePatterns = func(patterns ...string) func(Asset) bool {
 // and applies a predicate to filter the assets. If the predicate is nil, all assets will be included
 func GetDownloadsForRepository(repo string, predicate func(Asset) bool) (int, error) {
 	releases, err := GetReleases[Release](repo)
+	if err != nil {
+		return 0, err
+	}
+
 	assetCounts := AggregateDownloadCount(releases)
 	var total int
 	for asset, count := range assetCounts {
@@ -66,5 +70,5 @@ func GetDownloadsForRepository(repo string, predicate func(Asset) bool) (int, er
 			total += count
 		}
 	}
-	return total, err
+	return total, nil
 }
