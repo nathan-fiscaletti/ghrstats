@@ -1,6 +1,6 @@
 # ghrstats
 
-ghrstats is a simple command line tool to retrieve download statistics from GitHub releases.
+ghrstats is a simple command line tool to retrieve download statistics from GitHub releases based on release assets.
 
 ## Installation
 
@@ -14,11 +14,14 @@ $ go install github.com/rodrigobrito/ghrstats/cmd/ghrstats@latest
 $ ghrstats [-patterns *.ext1,*.ext2,...] <repo>
 ```
 
-## Example
+## Examples
 
 ```bash
 $ ghrstats nathan-fiscaletti/framecast
-2024/09/15 00:41:10 Total downloads: 544
+```
+
+```bash
+$ ghrstats -patterns "*.exe,*.dmg" nathan-fiscaletti/framecast
 ```
 
 ## License

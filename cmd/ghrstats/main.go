@@ -22,7 +22,7 @@ func main() {
 		log.Fatalf("Error fetching downloads: %v", err)
 	}
 
-	log.Printf("Total downloads: %d", downloadCount)
+	fmt.Printf("%d\n", downloadCount)
 }
 
 type arguments struct {
