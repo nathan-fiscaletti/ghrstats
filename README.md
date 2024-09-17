@@ -27,7 +27,7 @@ $ ghrstats -r <repo> [-a <total|itemized>] [-f *.ext1,*.ext2,...]
     {"aggregate_downloads":544}
     ```
 
-- Count all downloads for all release assets and itemize the results
+- Count all downloads for all release assets filtering based by the provided file patterns
     ```bash
     $ ghrstats -r nathan-fiscaletti/framecast -f "*.exe,*.dmg,*.deb" 
     ```
