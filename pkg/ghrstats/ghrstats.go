@@ -15,25 +15,46 @@ type Asset struct {
 // Release represents a GitHub release
 type Release struct {
 	Assets []Asset `json:"assets"`
+	Tag    string  `json:"tag_name"`
 }
 
 // GetReleases fetches the releases for a given repository
-func GetReleases[R any](repo string) ([]R, error) {
-	return RequestMany[R](fmt.Sprintf("repos/%s/releases", repo))
+func GetReleases(repo string) ([]Release, error) {
+	return RequestMany[Release](fmt.Sprintf("repos/%s/releases", repo))
+}
+
+type AggregateDownloadCountRequest struct {
+	Repo      string           `json:"repo"`
+	Tag       string           `json:"tag"`
+	Predicate func(Asset) bool `json:"predicate"`
 }
 
 // AggregateDownloadCount aggregates the download count for each asset, applying
 // a predicate to filter the assets. If the predicate is nil, all assets will be included
-func AggregateDownloadCount(releases []Release, predicate func(Asset) bool) map[Asset]int {
-	totalCount := make(map[Asset]int)
+func AggregateDownloadCount(req AggregateDownloadCountRequest) (map[Asset]int, error) {
+	releases, err := GetReleases(req.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredReleases := make([]Release, 0, len(releases))
 	for _, release := range releases {
+		if req.Tag == "" || release.Tag == req.Tag {
+			filteredReleases = append(filteredReleases, release)
+		}
+	}
+
+	totalCount := make(map[Asset]int)
+
+	for _, release := range filteredReleases {
 		for _, asset := range release.Assets {
-			if predicate == nil || predicate(asset) {
+			if req.Predicate == nil || req.Predicate(asset) {
 				totalCount[asset] += asset.DownloadCount
 			}
 		}
 	}
-	return totalCount
+
+	return totalCount, nil
 }
 
 // ByFileNamePatterns returns a predicate function that filters assets by file extension
@@ -58,18 +79,29 @@ var ByFileNamePatterns = func(patterns ...string) func(Asset) bool {
 	}
 }
 
+type GetDownloadsForRepositoryRequest struct {
+	Repo      string           `json:"repo"`
+	Tag       string           `json:"tag"`
+	Predicate func(Asset) bool `json:"predicate"`
+}
+
 // GetDownloadsForRepository fetches the download count for a given repository
 // and applies a predicate to filter the assets. If the predicate is nil, all assets will be included
-func GetDownloadsForRepository(repo string, predicate func(Asset) bool) (int, error) {
-	releases, err := GetReleases[Release](repo)
+func GetDownloadsForRepository(req GetDownloadsForRepositoryRequest) (int, error) {
+	assetCounts, err := AggregateDownloadCount(AggregateDownloadCountRequest{
+		Repo:      req.Repo,
+		Tag:       req.Tag,
+		Predicate: req.Predicate,
+	})
 	if err != nil {
 		return 0, err
 	}
 
-	assetCounts := AggregateDownloadCount(releases, predicate)
 	var total int
+
 	for _, count := range assetCounts {
 		total += count
 	}
+
 	return total, nil
 }

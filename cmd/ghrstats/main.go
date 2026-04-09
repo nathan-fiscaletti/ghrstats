@@ -20,25 +20,36 @@ func main() {
 
 	switch args.Action {
 	case cli.ActionAggregateTotal:
-		downloadCount, err := ghrstats.GetDownloadsForRepository(args.Repo, args.Filter)
+		downloadCount, err := ghrstats.GetDownloadsForRepository(ghrstats.GetDownloadsForRepositoryRequest{
+			Repo:      args.Repo,
+			Tag:       args.Tag,
+			Predicate: args.Filter,
+		})
 		if err != nil {
 			log.Fatalf("Error fetching downloads: %v", err)
 		}
 
-		data["aggregate_downloads"] = downloadCount
+		data["downloads"] = downloadCount
 	case cli.ActionAggregateItemized:
-		releases, err := ghrstats.GetReleases[ghrstats.Release](args.Repo)
+		aggregate, err := ghrstats.AggregateDownloadCount(ghrstats.AggregateDownloadCountRequest{
+			Repo:      args.Repo,
+			Tag:       args.Tag,
+			Predicate: args.Filter,
+		})
 		if err != nil {
-			log.Fatalf("Error fetching releases: %v", err)
+			log.Fatalf("Error aggregating downloads: %v", err)
 		}
 
-		aggregate := ghrstats.AggregateDownloadCount(releases, args.Filter)
 		for asset, count := range aggregate {
-			data[asset.Name] = count
+			if v, ok := data[asset.Name]; ok {
+				data[asset.Name] = v.(int) + count
+			} else {
+				data[asset.Name] = count
+			}
 		}
 	}
 
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Fatalf("Error marshalling JSON: %v", err)
 	}
